@@ -1,0 +1,36 @@
+version: 2
+jobs:
+  release:
+    docker:
+      - image: python:3.8-buster
+    steps:
+      - checkout
+
+      - run:
+          name: Install Python build/publishing tools
+          command: pip install build==0.8.0 twine==4.0.1
+
+      - run:
+          name: Build package
+          command: VERSION=${CIRCLE_TAG:1} python -m build
+
+      - run:
+          name: Release to PyPi repo
+          command: >
+            python -m twine upload --repository-url "${PYPI_REPO_URL}"
+            --username "${PYPI_REPO_USERNAME}"
+            --password "${PYPI_REPO_PASSWORD}"
+            dist/*
+
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - release:
+          context: pypi-repo
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
